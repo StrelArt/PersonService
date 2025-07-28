@@ -52,48 +52,51 @@ public class PersonServiceImpl implements PersonService{
     public PersonDto updatePersonName(Integer id, String newName) {
         Person person = personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
         person.setName(newName);
-        personRepository.save(person);
         return modelMapper.map(person, PersonDto.class);
     }
+
+
 
     @Override
     @Transactional
     public PersonDto updatePersonAddress(Integer id, AddressDto newAddress) {
         Person person = personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
-        Address address = modelMapper.map(newAddress, Address.class);
-        person.setAddress(address);
-        personRepository.save(person);
+        person.setAddress(modelMapper.map(newAddress, Address.class));
         return modelMapper.map(person, PersonDto.class);
     }
 
+//    @Override
+//    @Transactional(readOnly = true)
+//    public PersonDto[] findPersonsByName(String name) {
+//        return personRepository.findStreamByNameIgnoreCase(name)
+//                .map(p -> modelMapper.map(p, PersonDto.class))
+//                .toArray(PersonDto[]::new);
+//
+//    }
+
     @Override
     public PersonDto[] findPersonsByName(String name) {
-        return personRepository.findByNameIgnoreCase(name).stream()
-                .map(p -> modelMapper.map(p, PersonDto.class))
-                .toArray(PersonDto[]::new);
-
+        return modelMapper.map(personRepository.findArrayByNameIgnoreCase(name), PersonDto[].class);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PersonDto[] findPersonsByCity(String city) {
-        return personRepository.findByAddress_CityIgnoreCase(city).stream()
+        return personRepository.findStreamByAddressCityIgnoreCase(city)
                 .map(p -> modelMapper.map(p, PersonDto.class))
                 .toArray(PersonDto[]::new);
     }
 
     @Override
     public PersonDto[] findPersonsBetweenAges(Integer minAge, Integer maxAge) {
-        LocalDate today = LocalDate.now();
-        LocalDate from = today.minusYears(maxAge);
-        LocalDate to = today.minusYears(minAge);
-
-        return personRepository.findByBirthDateBetween(from, to).stream()
-                .map(p -> modelMapper.map(p, PersonDto.class))
-                .toArray(PersonDto[]::new);
+        LocalDate from = LocalDate.now().minusYears(maxAge);
+        LocalDate to = LocalDate.now().minusYears(minAge);
+        return modelMapper.map(personRepository.findArrayByBirthDateBetween(from, to), PersonDto[].class);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Iterable<CityPopulationDto> getCityPopulation() {
-        return personRepository.getCityPopulation();
+        return personRepository.getCitiesPopulation();
     }
 }
